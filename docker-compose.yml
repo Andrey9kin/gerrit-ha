@@ -8,6 +8,7 @@ services:
       - 8080
       - 29418:29418
     environment:
+      - WEBURL=http://gerrit
       - DATABASE_TYPE=postgresql
       - DB_PORT_5432_TCP_ADDR=db
       - DB_PORT_5432_TCP_PORT=5432
@@ -64,10 +65,10 @@ services:
           - node.role == manager
 
 # https://hub.docker.com/_/postgres/
+# TODO - volumes and security
   db:
     image: postgres:9.6.3-alpine
     environment:
       - POSTGRES_DB=reviewdb      
       - POSTGRES_USER=gerrit2
       - POSTGRES_PASSWORD=gerrit
-# TODO
