@@ -15,7 +15,7 @@ services:
       - DB_ENV_POSTGRES_DB=reviewdb
       - DB_ENV_POSTGRES_USER=gerrit2
       - DB_ENV_POSTGRES_PASSWORD=gerrit
-#      - GERRIT_INIT_ARGS='--install-all-plugins'
+      - GERRIT_INIT_ARGS=--install-all-plugins
       - AUTH_TYPE=DEVELOPMENT_BECOME_ANY_ACCOUNT
     depends_on:
       - db
