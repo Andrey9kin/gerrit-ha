@@ -1,20 +1,25 @@
-version: "3"
+version: "3.1"
+
+secrets:
+  POSTGRES_USER:
+    external: true
+  POSTGRES_PASSWORD:
+    external: true
 
 services:
 # https://hub.docker.com/r/openfrontier/gerrit/
   gerrit:
-    image: openfrontier/gerrit:2.13.8
+    image: andrey9kin/docker-gerrit:latest
     ports:
       - 8080
       - 29418:29418
     environment:
-      - WEBURL=http://gerrit
+      - WEBURL=http://gerrit.lgerrit
+      - BASEPATH=/gerrit/git
       - DATABASE_TYPE=postgresql
       - DB_PORT_5432_TCP_ADDR=db
       - DB_PORT_5432_TCP_PORT=5432
       - DB_ENV_POSTGRES_DB=reviewdb
-      - DB_ENV_POSTGRES_USER=gerrit2
-      - DB_ENV_POSTGRES_PASSWORD=gerrit
       - GERRIT_INIT_ARGS=--install-all-plugins
       - AUTH_TYPE=DEVELOPMENT_BECOME_ANY_ACCOUNT
     depends_on:
@@ -23,18 +28,20 @@ services:
       mode: replicated
       replicas: 1
       labels:
-        - traefik.frontend.rule=Host:gerrit
+        - traefik.frontend.rule=Host:gerrit.lgerrit
         - traefik.port=8080
         - traefik.docker.network=gerrit_default
-# TODO
-#    secrets:
-#    volumes:
-#      - $HOME/gerrit_volume:/var/gerrit/review_site
+    volumes:
+      - $PWD/git:/gerrit/
+      - $PWD/load-secrets.sh:/docker-entrypoint-init.d/load-secrets.sh
+    secrets:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
 
 # https://hub.docker.com/_/traefik/
   proxy:
     image: traefik:v1.3.0-alpine
-    command: --web --docker --docker.swarmmode --docker.watch --docker.domain=gerrit --logLevel=DEBUG
+    command: --web --docker --docker.swarmmode --docker.watch --docker.domain=lgerrit --logLevel=DEBUG
     ports:
       - "80:80"
       - "8080:8080"
@@ -58,17 +65,18 @@ services:
     deploy:
       labels:
         - traefik.port=8080
-        - traefik.frontend.rule=Host:visualizer.gerrit
+        - traefik.frontend.rule=Host:visualizer.lgerrit
         - traefik.docker.network=gerrit_default
       placement:
         constraints:
           - node.role == manager
 
 # https://hub.docker.com/_/postgres/
-# TODO - volumes and security
   db:
     image: postgres:9.6.3-alpine
     environment:
       - POSTGRES_DB=reviewdb      
       - POSTGRES_USER=gerrit2
       - POSTGRES_PASSWORD=gerrit
+    volumes:
+      - $PWD/db:/var/lib/postgresql/data
